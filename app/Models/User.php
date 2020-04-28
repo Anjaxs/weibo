@@ -47,20 +47,63 @@ class User extends Authenticatable
         });
     }
 
+    // 关注动作
+    public function follow($user_ids)
+    {
+        if (! is_array($user_ids)) {
+            $user_ids = [$user_ids];
+        }
+        $this->followings()->sync($user_ids, false);
+    }
+
+    // 取消关注
+    public function unfollow($user_ids)
+    {
+        if (! is_array($user_ids)) {
+            $user_ids = [$user_ids];
+        }
+        $this->followings()->detach($user_ids);
+    }
+
+    // 判断是否关注的人
+    public function isFollowing($user_id)
+    {
+        return $this->followings->containsStrict('id', $user_id);
+    }
+
+    // 获取头像
     public function gravatar($size = '100')
     {
         $hash = md5(strtolower(trim($this->attributes['email'])));
         return "http://www.gravatar.com/avatar/$hash?s=$size";
     }
 
+
+
+    /******************* 关联模型 *******************/
+
+    // 获取动态流
     public function feed()
     {
         return $this->statuses()
                     ->orderBy('created_at', 'desc');
     }
 
+    // 获取微博
     public function statuses()
     {
         return $this->hasMany(Status::class);
+    }
+
+    // 获取粉丝
+    public function followers()
+    {
+        return $this->belongsToMany(User::class, 'followers', 'user_id', 'follower_id');
+    }
+
+    // 获取关注人
+    public function followings()
+    {
+        return $this->belongsToMany(User::class, 'followers', 'follower_id', 'user_id');
     }
 }
